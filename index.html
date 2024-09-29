@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batman Pomodoro Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Basic Reset */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Roboto', sans-serif;
+            background-color: #0a0a0a; /* Gotham night sky */
+        }
+
+        /* Container */
+        .container {
+            background: #1d1f21;
+            border-radius: 20px;
+            padding: 40px;
+            width: 300px;
+            height: 550px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Bat Signal Animation */
+        .bat-signal {
+            position: absolute;
+            top: -100px;
+            left: -50px;
+            width: 300px;
+            height: 300px;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/0/0c/Batman_Symbol.png') no-repeat center;
+            background-size: contain;
+            opacity: 0;
+            animation: fadeInOut 8s infinite ease-in-out;
+        }
+
+        /* Bat Signal Keyframe Animation */
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: rotate(-30deg); }
+            50% { opacity: 1; transform: rotate(0deg); }
+            100% { opacity: 0; transform: rotate(30deg); }
+        }
+
+        /* Timer Display */
+        .timer-display {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #f4f4f4;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+        }
+
+        /* Time Control Buttons */
+        .time-controls {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            color: #ffc107;
+            font-size: 1.2rem;
+        }
+
+        .time-controls button {
+            background: transparent;
+            border: 2px solid #ffc107;
+            color: #ffc107;
+            font-size: 1.5rem;
+            border-radius: 50%;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .time-controls button:hover {
+            background-color: #ffc107;
+            color: #1d1f21;
+            transform: scale(1.1);
+        }
+
+        .time-controls span {
+            font-size: 1.7rem;
+            font-weight: bold;
+        }
+
+        /* Action Buttons */
+        .controls button {
+            font-size: 1.2rem;
+            padding: 12px 24px;
+            background: #ffc107;
+            color: #1d1f21;
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            transition: all 0.4s ease;
+        }
+
+        .controls button:hover {
+            background: #ff6f00;
+            box-shadow: 0 15px 25px rgba(255, 111, 0, 0.7);
+        }
+
+        /* Batman Animation */
+        .batman {
+            position: absolute;
+            bottom: -100px;
+            right: -120px;
+            width: 200px;
+            height: 200px;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/7/79/Batman_Logo.svg') no-repeat center;
+            background-size: contain;
+            opacity: 0;
+            animation: batmanFly 10s infinite ease-in-out;
+        }
+
+        @keyframes batmanFly {
+            0% { transform: translateX(300px) scale(0.7); opacity: 0; }
+            50% { transform: translateX(-50px) scale(1); opacity: 1; }
+            100% { transform: translateX(-400px) scale(0.7); opacity: 0; }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Bat Signal Animation -->
+        <div class="bat-signal"></div>
+
+        <!-- Timer Display -->
+        <div class="timer-display">
+            <label id="pomodoro-timer">25:00</label>
+        </div>
+
+        <!-- Session Time Control -->
+        <div class="time-controls">
+            <p>Session</p>
+            <button id="session-minus">-</button>
+            <span id="session-length">25</span>
+            <button id="session-plus">+</button>
+        </div>
+
+        <!-- Break Time Control -->
+        <div class="time-controls">
+            <p>Break</p>
+            <button id="break-minus">-</button>
+            <span id="break-length">5</span>
+            <button id="break-plus">+</button>
+        </div>
+
+        <!-- Start and Reset Buttons -->
+        <div class="controls">
+            <button id="start-pomodoro" class="start-btn">Start</button>
+            <button id="reset-pomodoro" class="reset-btn">Reset</button>
+        </div>
+
+        <!-- Batman Flying Animation -->
+        <div class="batman"></div>
+    </div>
+
+    <script>
+        let sessionLength = 25;
+        let breakLength = 5;
+        let timeLeft = sessionLength * 60;
+        let pomodoroInterval;
+        let onBreak = false;
+        let isRunning = false;
+
+        function updateDisplay() {
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            document.getElementById('pomodoro-timer').textContent = `${pad(minutes)}:${pad(seconds)}`;
+        }
+
+        function pad(number) {
+            return number.toString().padStart(2, '0');
+        }
+
+        function startPomodoro() {
+            if (!isRunning) {
+                isRunning = true;
+                document.getElementById('session-minus').disabled = true;
+                document.getElementById('session-plus').disabled = true;
+                document.getElementById('break-minus').disabled = true;
+                document.getElementById('break-plus').disabled = true;
+
+                pomodoroInterval = setInterval(() => {
+                    timeLeft--;
+                    updateDisplay();
+
+                    if (timeLeft < 0) {
+                        if (onBreak) {
+                            timeLeft = sessionLength * 60;
+                        } else {
+                            timeLeft = breakLength * 60;
+                        }
+                        onBreak = !onBreak;
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetPomodoro() {
+            clearInterval(pomodoroInterval);
+            isRunning = false;
+            onBreak = false;
+            timeLeft = sessionLength * 60;
+            updateDisplay();
+            document.getElementById('session-minus').disabled = false;
+            document.getElementById('session-plus').disabled = false;
+            document.getElementById('break-minus').disabled = false;
+            document.getElementById('break-plus').disabled = false;
+        }
+
+        document.getElementById('start-pomodoro').addEventListener('click', startPomodoro);
+        document.getElementById('reset-pomodoro').addEventListener('click', resetPomodoro);
+
+        // Session time controls
+        document.getElementById('session-minus').addEventListener('click', () => {
+            if (sessionLength > 1) sessionLength--;
+            document.getElementById('session-length').textContent = sessionLength;
+            if (!isRunning) timeLeft = sessionLength * 60;
+            updateDisplay();
+        });
+
+        document.getElementById('session-plus').addEventListener('click', () => {
+            sessionLength++;
+            document.getElementById('session-length').textContent = sessionLength;
+            if (!isRunning) timeLeft = sessionLength * 60;
+            updateDisplay();
+        });
+
+        // Break time controls
+        document.getElementById('break-minus').addEventListener('click', () => {
+            if (breakLength > 1) breakLength--;
+            document.getElementById('break-length').textContent = breakLength;
+        });
+
+        document.getElementById('break-plus').addEventListener('click', () => {
+            breakLength++;
+            document.getElementById('break-length').textContent = breakLength;
+        });
+    </script>
+</body>
+</html>
